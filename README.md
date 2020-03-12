@@ -5,12 +5,33 @@
 
 ## Usage
 
+#### type Associativity
+
+```go
+type Associativity uint
+```
+
+Associativity defines token associativity data type
+
+```go
+const (
+	// AssociativityNone defines a token has no associativity
+	AssociativityNone Associativity = iota
+	// AssociativityLeft defines a token is left associative
+	AssociativityLeft
+	// AssociativityRight defines a token is right associative
+	AssociativityRight
+)
+```
+
 #### type Token
 
 ```go
 type Token struct {
-	Type  Type
-	Value string
+	Type          Type
+	Value         string
+	Associativity Associativity
+	Precedence    uint
 }
 ```
 

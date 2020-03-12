@@ -12,8 +12,10 @@ type Tokens []Token
 
 // Token defines a mathematical expression token
 type Token struct {
-	Type  Type
-	Value string
+	Type          Type
+	Value         string
+	Associativity Associativity
+	Precedence    uint
 }
 
 // Type defines token type data type
@@ -30,6 +32,18 @@ const (
 	TypeOperator
 )
 
+// Associativity defines token associativity data type
+type Associativity uint
+
+const (
+	// AssociativityNone defines a token has no associativity
+	AssociativityNone Associativity = iota
+	// AssociativityLeft defines a token is left associative
+	AssociativityLeft
+	// AssociativityRight defines a token is right associative
+	AssociativityRight
+)
+
 // Parse mathematical expression in infix format to `Tokens`
 // and returns error if unknown token found
 func Parse(s string) (tokens Tokens, err error) {
@@ -38,8 +52,9 @@ func Parse(s string) (tokens Tokens, err error) {
 		format = func() {
 			if buffer.String() != "" {
 				token := Token{
-					Type:  TypeVariable,
-					Value: buffer.String(),
+					Type:          TypeVariable,
+					Value:         buffer.String(),
+					Associativity: AssociativityNone,
 				}
 
 				if _, err := strconv.ParseFloat(buffer.String(), 64); err == nil {
@@ -66,23 +81,36 @@ func Parse(s string) (tokens Tokens, err error) {
 			continue
 		case TypeLParent:
 			tokens = append(tokens, Token{
-				Type:  TypeLParent,
-				Value: string(c),
+				Type:          TypeLParent,
+				Value:         string(c),
+				Associativity: AssociativityNone,
 			})
 		case TypeRParent:
 			tokens = append(tokens, Token{
-				Type:  TypeRParent,
-				Value: string(c),
+				Type:          TypeRParent,
+				Value:         string(c),
+				Associativity: AssociativityNone,
 			})
 		case TypeConstant:
 			buffer.WriteRune(c)
 		case TypeVariable:
 			buffer.WriteRune(c)
 		case TypeOperator:
-			tokens = append(tokens, Token{
+			token := Token{
 				Type:  TypeOperator,
 				Value: string(c),
-			})
+			}
+
+			switch c {
+			case '*', '/':
+				token.Precedence = 3
+				token.Associativity = AssociativityLeft
+			case '+', '-':
+				token.Precedence = 2
+				token.Associativity = AssociativityLeft
+			}
+
+			tokens = append(tokens, token)
 		case TypeUnknown:
 			return tokens, errors.New("mathtoken: unknown token found")
 		}
